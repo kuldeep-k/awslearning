@@ -8,6 +8,9 @@ RDS/Dynamo DB/Document DB
 S3
 ECS
 CloudWatch
+VPC
+EC2
+
 
 CloudFormation
 SQS

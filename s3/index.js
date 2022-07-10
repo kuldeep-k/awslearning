@@ -37,15 +37,12 @@ const createObjectOnS3 = async (filePath) =>  {
 const listObjectFromS3 = async () =>  {
     const params = {
         Bucket: defaultBucket,
-        Key: +(new Date()) + '-'+ path.basename(filePath).replace(" ", "-"),
-        Body: fs.readFileSync(filePath),
         
     }
 
     try {
-        const results = s3Client.send(
-            new S3Instance.PutObjectCommand(params)
-        );
+        const results = await S3.listObjects(params)
+        
         return results;
     } catch (error) {
         console.error("Unable to upload on S3");
@@ -101,6 +98,13 @@ const deleteObjectFromS3 = async (filePath) =>  {
     }
 }
 
+listObjectFromS3().then((results) => {
+    console.log(results);
+}).catch((error) => {
+    console.error("Unable to handle exception");
+    console.error(error);
+});
+/*
 let fileKey = null;
 createObjectOnS3("./static/product1.jpeg")
 .then((results) => {
@@ -121,3 +125,4 @@ createObjectOnS3("./static/product1.jpeg")
     console.error("Unable to handle exception");
     console.error(error);
 });
+*/
