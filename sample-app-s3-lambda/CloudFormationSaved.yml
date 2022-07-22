@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Stack create test stacking setup involves API Gatwway and Lambda "
+Resources:
+  UserApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties: 
+      # ApiKeySourceType: HEADER
+      #BinaryMediaTypes: 
+      #   - application~json
+      #Body: Json
+      #BodyS3Location: 
+      #  S3Location
+      #CloneFrom: String
+      #Description: String
+      #DisableExecuteApiEndpoint: Boolean
+      #EndpointConfiguration: 
+      #  EndpointConfiguration
+      #FailOnWarnings: Boolean
+      #MinimumCompressionSize: Integer
+      #Mode: String
+      Name: UserApi
+      #Parameters: 
+      #  Key : Value
+      #Policy: Json
+      #Tags: 
+      #  - Tag
+
+
+  UserApiGetAllMethod:
+    Type: AWS::ApiGateway::Method
+    Properties: 
+      #ApiKeyRequired: false
+      #AuthorizationScopes: 
+      #  - String
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "GET"
+      #Integration: 
+      #  Type: "MOCK"
+      Integration: 
+        IntegrationHttpMethod: "POST"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserFunction.Arn
+      #MethodResponses: 
+      #  - MethodResponse
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      #RequestParameters: 
+      #  Key : Value
+      #RequestValidatorId: String
+      ResourceId: !GetAtt "UserApi.RootResourceId"
+      RestApiId: !Ref "UserApi"    
+
+  UserApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: 
+      - UserApiGetAllMethod
+    Properties: 
+      RestApiId: !Ref UserApi   
+      StageName: beta
+
+
+  UserFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: "User CRUD APIs"
+      FunctionName: UserFunction 
+      Handler: "index.handler"
+      #KmsKeyArn: 
+      MemorySize: 128
+      Role: !GetAtt "CustomLambdaInvokeRole.Arn"
+      #Role: !GetAtt role.Arn
+      
+      Runtime: nodejs16.x
+      #Timeout:  
+      #VpcConfig:
+      #  SecurityGroupIds:
+      #    - sg-id
+      #  SubnetIds:
+      #    - subnet-id
+      #Environment:
+      #  Variables:
+      #    key1: value1 # A map of key-value pairs that the Lambda function can access
+      Code:
+        S3Bucket: "kuldeepk-lambarepo"
+        S3Key: "user-lambda.zip"
+        # S3ObjectVersion: 
+        # ZipFile: 
+      #Tags:
+      #  - Key: keyname
+      #    Value: value
+
+  CustomLambdaInvokeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # Path:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: 
+          - Action: ["sts:AssumeRole"]
+            Effect: "Allow"
+            Principal: 
+              Service: ["lambda.amazonaws.com"]
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+
+ 
+      #Policies:
+      #  - 
+      #    PolicyName: "CustomLambdaInvokePolicy"
+      #    PolicyDocument:
+      #      Version: "2012-10-17"
+      #      Statement:
+      #        - 
+      #          Effect: "Allow"
+      #          Action: ["cloudwatch.*", "logs:*"]
+      #          Resource: "*"
+
+  UserLambdaLogGroup:
+    DependsOn: UserFunction
+    Type: AWS::Logs::LogGroup
+    Properties:
+      # RetentionInDays: 
+      LogGroupName: !Sub "/aws/lambda/${UserFunction}"
