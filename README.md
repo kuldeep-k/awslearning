@@ -4,7 +4,9 @@ AWS Modules
 
 IAM
 Cognito
-RDS/Dynamo DB/Document DB
+RDS
+MySQL Aurora
+Dynamo DB/Document DB
 S3
 ECS
 CloudWatch
@@ -18,4 +20,5 @@ SNS
 Kinesis
 API Gateway
 Lambda
+Route 53
 
