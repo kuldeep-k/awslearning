@@ -66,6 +66,7 @@ const getUser = (id) => {
   return user;
 }
 
+
 const deleteUser = (id) => {
   let userId = Number(id);
   users = users.filter((userRow) => {
