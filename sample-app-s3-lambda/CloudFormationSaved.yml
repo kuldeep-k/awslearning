@@ -45,7 +45,45 @@ Resources:
         - RootResourceId
       PathPart: users  
 
-  UserApiGetAllMethod:
+  # UserApiGetAllMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserApiResource
+  #   Properties: 
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       Type: "AWS_PROXY"
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     #RequestParameters: 
+  #     #  Key : Value
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
+  UserApiAnyMethod:
     Type: AWS::ApiGateway::Method
     DependsOn: 
       - UserApiResource
@@ -56,20 +94,23 @@ Resources:
       # Description: "User API Get All Method"
       AuthorizationType: "NONE"
       # AuthorizerId: String
-      HttpMethod: "GET"
+      HttpMethod: "ANY"
       #Integration: 
       #  Type: "MOCK"
       Integration: 
         IntegrationHttpMethod: "POST"
         IntegrationResponses: 
           - StatusCode: 200
-          
-        Type: "AWS"
+            ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        Type: "AWS_PROXY"
         Uri: !Sub
           - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
           - lambdaArn: !GetAtt UserFunction.Arn
       MethodResponses: 
         - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        - StatusCode: 500  
       #OperationName: String
       #RequestModels: 
       #  Key : Value
@@ -141,7 +182,8 @@ Resources:
   UserApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: 
-      - UserApiGetAllMethod
+      #- UserApiGetAllMethod
+      - UserApiAnyMethod
     Properties:
       Description: "User API Deployment" 
       RestApiId: !Ref UserApi   

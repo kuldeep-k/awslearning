@@ -6,30 +6,51 @@ const getUsers = () => {
 
 const addUser = (body) => {
   let user = body;
+  
   error = false;
+  console.log(users);
   users.forEach((userRow) => {
+    console.log([userRow.name, user.name]);
     if(userRow.name === user.name) {
       error = true;
     }
   });
 
   if(!error) {
+
     users.push(user);
+    console.log("users")
+    console.log(users)
     return users;
   } else {
-    throw new Error({error: "Duplicate User"});
+    console.log("IN ERRRO")
+    throw new Error("Duplicate User");
   }
 }
 
 const editUser = (id, body) => {
   let userId = Number(id);
   let user = body;
-  users = users.map((userRow) => {
-    if(userRow.id === userId) {
-      userRow = user;
+
+  users.forEach((userRow) => {
+    console.log([userRow.name, user.name]);
+    if(userRow.id !== userId && userRow.name === user.name) {
+      error = true;
     }
-    return userRow;
-  })
+  });
+
+  if(!error) {
+
+    users = users.map((userRow) => {
+      if(userRow.id === userId) {
+        userRow = user;
+      }
+      return userRow;
+    })
+  } else {
+    console.log("IN ERRRO")
+    throw new Error("Duplicate User");
+  }
   return users;
 }
 
