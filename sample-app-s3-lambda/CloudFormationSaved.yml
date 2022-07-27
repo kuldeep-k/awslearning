@@ -45,6 +45,14 @@ Resources:
         - RootResourceId
       PathPart: users  
 
+  UserSingleApiResource:
+    Type: "AWS::ApiGateway::Resource"
+    DependsOn: UserApi
+    Properties:
+      RestApiId: !Ref UserApi
+      ParentId: !Ref UserApiResource
+      PathPart: "{id}"
+
   # UserApiGetAllMethod:
   #   Type: AWS::ApiGateway::Method
   #   DependsOn: 
@@ -103,6 +111,8 @@ Resources:
           - StatusCode: 200
             ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
         Type: "AWS_PROXY"
+        RequestParameters: 
+          integration.request.path.id: method.request.path.id
         Uri: !Sub
           - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
           - lambdaArn: !GetAtt UserFunction.Arn
@@ -114,11 +124,51 @@ Resources:
       #OperationName: String
       #RequestModels: 
       #  Key : Value
-      #RequestParameters: 
-      #  Key : Value
+      RequestParameters: 
+        method.request.path.id: true
       #RequestValidatorId: String
       #ResourceId: !GetAtt "UserApi.RootResourceId"
       ResourceId: !Ref "UserApiResource"
+      RestApiId: !Ref "UserApi"    
+
+  UserSingleApiAnyMethod:
+    Type: AWS::ApiGateway::Method
+    DependsOn: 
+      - UserSingleApiResource
+    Properties: 
+      #ApiKeyRequired: false
+      #AuthorizationScopes: 
+      #  - String
+      # Description: "User API Get All Method"
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "ANY"
+      #Integration: 
+      #  Type: "MOCK"
+      Integration: 
+        IntegrationHttpMethod: "POST"
+        IntegrationResponses: 
+          - StatusCode: 200
+            ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        Type: "AWS_PROXY"
+        RequestParameters: 
+          integration.request.path.id: method.request.path.id
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserFunction.Arn
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        - StatusCode: 500  
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      RequestParameters: 
+        method.request.path.id: true
+      #RequestValidatorId: String
+      #ResourceId: !GetAtt "UserApi.RootResourceId"
+      ResourceId: !Ref "UserSingleApiResource"
       RestApiId: !Ref "UserApi"    
 
   ApiGatewayCloudWatchLogsRole:
@@ -174,6 +224,11 @@ Resources:
           HttpMethod: "*"
           LoggingLevel: "INFO"
           ResourcePath: "/*"
+        # - 
+        #   DataTraceEnabled: true
+        #   HttpMethod: "*"
+        #   LoggingLevel: "INFO"
+        #   ResourcePath: "/{id}"
     
       RestApiId: !Ref UserApi
       StageName: latest
@@ -184,6 +239,7 @@ Resources:
     DependsOn: 
       #- UserApiGetAllMethod
       - UserApiAnyMethod
+      - UserSingleApiAnyMethod
     Properties:
       Description: "User API Deployment" 
       RestApiId: !Ref UserApi   
