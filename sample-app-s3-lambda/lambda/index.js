@@ -3,34 +3,61 @@ exports.handler = async (event) => {
     const userService = require('./services/users');
     let results = {};
     console.log(event)
+
+    const validateData = (body) => {
+        if(!body.id) {
+            throw new Error("Required id");
+        }
+
+        if(!body.name) {
+            throw new Error("Required name");
+        }
+
+        if(body.age === undefined) {
+            throw new Error("Required age");
+        }
+
+        if(body.dob === undefined) {
+            throw new Error("Required dob");
+        }
+    }
+
     try {
         switch(event.httpMethod) {
             case "GET":
-                if(event.pathParameters && event.pathParameters.userId) {
-                    results = userService.getUser(event.pathParameters.userId);
+                if(event.pathParameters && event.pathParameters.id) {
+                    results = userService.getUser(Number(event.pathParameters.id));
                 } else {
                     results = userService.getUsers();
                 }
                 
                 break;
             case "POST":
-                body = {};
+                body = event.body;
                 try {
-                    body = JSON.parse(event.body);
+                    console.log(body);
+                    body = body.replace(/\r?\n|\r/g, '');
+                    console.log(body);
+                    body = JSON.parse(body);
+                    console.log(body);
                 } catch (error) {
+                    console.log("A1",  error);
                     body = {};
                 }
+                validateData(body);
                 results = userService.addUser(body);
                 break;
             case "PATCH":
-                body = {};
+                body = event.body;
                 try {
-                    body = JSON.parse(event.body);
+                    body = body.replace(/\r?\n|\r/g, '');
+                    body = JSON.parse(body);
                 } catch (error) {
-    
+                    console.log("B1",  error);
                 }
-                if(event.pathParameters && event.pathParameters.userId) {
-                    results = userService.editUser(event.pathParameters.userId, body);
+                validateData(body);
+                if(event.pathParameters && event.pathParameters.id) {
+                    results = userService.editUser(Number(event.pathParameters.id), body);
                 } else {
                     throw new Error("Method not allowed with specific user id");
                 }
@@ -38,8 +65,8 @@ exports.handler = async (event) => {
                 // results = userService.editUser(body);
                 break;
             case "DELETE":
-                if(event.pathParameters && event.pathParameters.userId) {
-                    results = userService.deleteUser(event.pathParameters.userId);
+                if(event.pathParameters && event.pathParameters.id) {
+                    results = userService.deleteUser(Number(event.pathParameters.id));
                 } else {
                     throw new Error("Method not allowed with specific user id");
                 }
@@ -74,4 +101,6 @@ exports.handler = async (event) => {
         console.log(response)
         return response;
     }        
+
+    
 };

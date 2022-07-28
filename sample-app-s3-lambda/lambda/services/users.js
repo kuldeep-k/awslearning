@@ -7,7 +7,7 @@ const getUsers = () => {
 const addUser = (body) => {
   let user = body;
   
-  error = false;
+  let error = false;
   console.log(users);
   users.forEach((userRow) => {
     console.log([userRow.name, user.name]);
@@ -31,7 +31,7 @@ const addUser = (body) => {
 const editUser = (id, body) => {
   let userId = Number(id);
   let user = body;
-
+  let error = false;
   users.forEach((userRow) => {
     console.log([userRow.name, user.name]);
     if(userRow.id !== userId && userRow.name === user.name) {
