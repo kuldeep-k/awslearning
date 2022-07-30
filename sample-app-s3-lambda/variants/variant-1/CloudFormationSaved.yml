@@ -131,6 +131,125 @@ Resources:
       ResourceId: !Ref "UserApiResource"
       RestApiId: !Ref "UserApi"    
 
+  # UserApiGetMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserApiResource
+  #   Properties: 
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: 
+  #             method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+  #             method.response.header.Access-Control-Allow-Methods: "'GET,POST,PATCH,DELETE,PUT,OPTIONS'"
+  #             method.response.header.Access-Control-Allow-Origin: "'*'"
+
+  #       Type: "AWS_PROXY"
+  #       RequestParameters: 
+  #         integration.request.path.id: method.request.path.id
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: 
+  #           method.response.header.Access-Control-Allow-Origin: false
+  #           method.response.header.Access-Control-Allow-Headers: false
+  #           method.response.header.Access-Control-Allow-Methods: false
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     RequestParameters: 
+  #       method.request.path.id: true
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
+  UserApiOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    DependsOn: 
+      - UserApiResource
+    Properties: 
+      # Description: "User API Get All Method"
+      AuthorizationType: "NONE"
+      HttpMethod: "OPTIONS"
+      Integration: 
+        #IntegrationHttpMethod: "POST"
+        PassthroughBehavior: WHEN_NO_MATCH 
+        IntegrationResponses: 
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PATCH,DELETE,PUT,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''  
+        Type: "MOCK"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: 
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+      ResourceId: !Ref "UserApiResource"
+      RestApiId: !Ref "UserApi"
+
+  # UserSingleApiGetMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserSingleApiResource
+  #   Properties:  
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       Type: "AWS_PROXY"
+  #       RequestParameters: 
+  #         integration.request.path.id: method.request.path.id
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     RequestParameters: 
+  #       method.request.path.id: true
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserSingleApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
   UserSingleApiAnyMethod:
     Type: AWS::ApiGateway::Method
     DependsOn: 
@@ -247,7 +366,8 @@ Resources:
   UserApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: 
-      #- UserApiGetAllMethod
+      - UserApiOptionsMethod
+      #- UserApiGetMethod
       - UserApiAnyMethod
       - UserSingleApiAnyMethod
     Properties:

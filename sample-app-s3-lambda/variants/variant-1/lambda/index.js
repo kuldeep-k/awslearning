@@ -76,7 +76,11 @@ exports.handler = async (event) => {
         let response = {
             statusCode: 200,
             body: JSON.stringify(results),
-            // body: results
+            headers: {
+                "Access-Control-Allow-Headers" : "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,PUT,OPTIONS"
+            },
         };
         console.log(results)
         console.log("SUCCESS RESPONSE")
@@ -86,6 +90,11 @@ exports.handler = async (event) => {
     } catch (error) {
         let response = {
             statusCode: 422,
+            headers: {
+                "Access-Control-Allow-Headers" : "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,PUT,OPTIONS"
+            },
             body: JSON.stringify({error:error.message}),
         };
         console.log(error);

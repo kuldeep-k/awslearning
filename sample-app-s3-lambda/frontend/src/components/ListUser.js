@@ -7,14 +7,21 @@ const UserList = () => {
 const [users, setUsers] = useState([]);
 
 useEffect(() => {
+	console.log("111111111111111111111111	")
 	axios
-	.get(process.env.REACT_APP_BACKEND_API + "/users")
+	.get(process.env.REACT_APP_BACKEND_API + "/users", {
+		headers: {
+			'Content-Type': 'application/json',
+			'Accept': 'application/json'
+		}
+	})
 	.then(({ data }) => {
 		setUsers(data);
 	})
 	.catch((error) => {
 		console.log(error);
 	});
+	
 }, []);
 
 const DataTable = () => {
