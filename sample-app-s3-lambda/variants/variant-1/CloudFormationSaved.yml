@@ -412,7 +412,6 @@ Resources:
       #  - Key: keyname
       #    Value: value
 
-  #CustomLambdaInvokeRole:
   UserFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -441,12 +440,27 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: "*"
 
-  # UserLambdaLogGroup:
-  #   DependsOn: UserFunction
-  #   Type: AWS::Logs::LogGroup
-  #   Properties:
-  #     # RetentionInDays: 
-  #     LogGroupName: !Sub "/aws/lambda/${UserFunction}"
-      
+  # UserFrontendS3Hosting:
+  #   Type: AWS::S3::Bucket
+  #   Properties: 
+  #     AccessControl: PublicRead
+  #     BucketName: kuldeepk-frontend
+  #     WebsiteConfiguration: 
+  #       IndexDocument: index.html
+  #       ErrorDocument: index.html
 
-      
+  # UserFrontendS3HostingPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: !Ref UserFrontendS3Hosting
+  #     PolicyDocument: 
+  #       Id: UserFrontendS3HostingPolicy
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Sid: PublicReadForFrontendS3Hosting
+  #           Effect: Allow
+  #           Principal: "*"
+  #           Action: 's3:GetObject'
+  #           Resource: !Join ['', ['arn:aws:s3:::', !Ref UserFrontendS3Hosting, '/*']]
+
+
