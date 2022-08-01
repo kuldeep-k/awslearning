@@ -1,0 +1,167 @@
+Resources:
+  UserModuleApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties: 
+      # ApiKeySourceType: HEADER
+      #BinaryMediaTypes: 
+      #   - application~json
+      #Body: Json
+      #BodyS3Location: 
+      #  S3Location
+      #CloneFrom: String
+      #Description: String
+      #DisableExecuteApiEndpoint: Boolean
+      #EndpointConfiguration: 
+      #  EndpointConfiguration
+      #FailOnWarnings: Boolean
+      #MinimumCompressionSize: Integer
+      #Mode: String
+      Name: UserModuleApi
+      #Parameters: 
+      #  Key : Value
+      #Policy: Json
+      #Tags: 
+      #  - Tag
+
+
+  UserModuleApiGetAllMethod:
+    Type: AWS::ApiGateway::Method
+    Properties: 
+      ApiKeyRequired: Boolean
+      AuthorizationScopes: 
+        - String
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "GET"
+      Integration: 
+        IntegrationHttpMethod: "POST"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserModule.Arn
+      #MethodResponses: 
+      #  - MethodResponse
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      #RequestParameters: 
+      #  Key : Value
+      #RequestValidatorId: String
+      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
+      RestApiId: !Ref "UserModuleApi"    
+
+  UserModuleApiGetOneMethod:
+    Type: AWS::ApiGateway::Method
+    Properties: 
+      ApiKeyRequired: Boolean
+      AuthorizationScopes: 
+        - String
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "GET"
+      Integration: 
+        IntegrationHttpMethod: "POST"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserModule.Arn
+      #MethodResponses: 
+      #  - MethodResponse
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      RequestParameters: 
+        method.request.path.id : true
+      #RequestValidatorId: String
+      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
+      RestApiId: !Ref "UserModuleApi"    
+
+  UserModuleApiPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties: 
+      ApiKeyRequired: Boolean
+      AuthorizationScopes: 
+        - String
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "POST"
+      Integration: 
+        IntegrationHttpMethod: "POST"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserModule.Arn
+      #MethodResponses: 
+      #  - MethodResponse
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      #RequestParameters: 
+      #  Key : Value
+      #RequestValidatorId: String
+      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
+      RestApiId: !Ref "UserModuleApi"    
+
+  UserModuleApiPatchMethod:
+    Type: AWS::ApiGateway::Method
+    Properties: 
+      ApiKeyRequired: Boolean
+      AuthorizationScopes: 
+        - String
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "PATCH"
+      Integration: 
+        IntegrationHttpMethod: "PATCH"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserModule.Arn
+      #MethodResponses: 
+      #  - MethodResponse
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      #RequestParameters: 
+      #  Key : Value
+      #RequestValidatorId: String
+      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
+      RestApiId: !Ref "UserModuleApi"    
+
+  UserModuleApiDeleteMethod:
+    Type: AWS::ApiGateway::Method
+    Properties: 
+      ApiKeyRequired: Boolean
+      AuthorizationScopes: 
+        - String
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "DELETE"
+      Integration: 
+        IntegrationHttpMethod: "DELETE"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserModule.Arn
+      #MethodResponses: 
+      #  - MethodResponse
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      #RequestParameters: 
+      #  Key : Value
+      #RequestValidatorId: String
+      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
+      RestApiId: !Ref "UserModuleApi"    
+
+  UserModuleApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: 
+      - UserModuleApiGetAllMethod
+      - UserModuleApiGetOneMethod
+      - UserModuleApiPostMethod
+      - UserModuleApiPatchMethod
+      - UserModuleApiDeleteMethod
+    Properties: 
+      RestApiId: !Ref UserModuleApi   
+      StageName: beta
