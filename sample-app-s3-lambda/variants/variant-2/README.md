@@ -1,5 +1,5 @@
 
-#Variant 1
+#Variant 2
 
 - Frontend : React, S3
 - Backend: API-Gateway/Lambda
@@ -38,3 +38,10 @@ Also for frontend two extra resources also added
 
 NOTE:   **UserApiAnyMethod API Method required lot of other parametes like RequestParameters, MethodResponses, IntegrationResponses which is not found in basic docs of AWS. But these parameters is very much required to integrate and run LAMBDA successfully.**
 NOTE: **CORS header correctly need to set in OPTION API method and Lambda Response ( in code ). Otherwise APIs will not work with any frontend application while will give CORS errors.** 
+
+
+3) In Addition to above Variant 1 Items, variiant 2 also setup the Documenr DB ( MongoDB Compatible )
+	1) Lambda code chnages for Mongoose integration
+	2) Lambda setting changes for environment settings ( DSN, TLS )
+	3) Lambda setting changes for VPC. It needed to call AWS Document Db as both should be in same VPC/Subnet
+	4) Lambda setting chnages for add extra permission for Network interfaces

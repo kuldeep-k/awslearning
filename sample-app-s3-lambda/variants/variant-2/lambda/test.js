@@ -1,3 +1,20 @@
+try {
+    let dbConnection = require("./connection");
+    console.log(dbConnection);
+    dbConnection.then((result) => {
+        if(!result) {
+            console.log("DB Not connected");
+            process.exit(0);
+        }
+    }).catch(() => {
+        console.log("PPPPPPPPPPPPPpppppDB Not connected");
+        process.exit(0);
+    })
+    
+} catch (error) {
+    console.log("Not connected");
+    process.exit(0);
+}
 const userService = require('./services/users');
 
 const execute = async () => {

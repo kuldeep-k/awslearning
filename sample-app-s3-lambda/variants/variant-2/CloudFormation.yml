@@ -1,6 +1,33 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Stack create test stacking setup involves API Gatwway and Lambda "
+
+Parameters: 
+  DBUser: 
+    Description: "Document DB User"
+    Type: String
+    MinLength: 1
+    MaxLength: 41
+    AllowedPattern: ^[a-zA-Z0-9\!\*\$]*$
+  DBPwd: 
+    NoEcho: true
+    Description: "Document DB Password"
+    Type: String
+    MinLength: 1
+    MaxLength: 41
+    AllowedPattern: ^[a-zA-Z0-9\!\*\$]*$
+
 Resources:
-  UserModuleApi:
+  ApiGatewayAccount:
+   Type: "AWS::ApiGateway::Account"
+   Properties:
+     CloudWatchRoleArn : !GetAtt
+       - "ApiGatewayCloudWatchLogsRole"
+       - "Arn"
+    
+  UserApi:
     Type: AWS::ApiGateway::RestApi
+    DependsOn: 
+      - UserFunction  
     Properties: 
       # ApiKeySourceType: HEADER
       #BinaryMediaTypes: 
@@ -9,159 +36,476 @@ Resources:
       #BodyS3Location: 
       #  S3Location
       #CloneFrom: String
-      #Description: String
+      Description: "User API"
       #DisableExecuteApiEndpoint: Boolean
       #EndpointConfiguration: 
       #  EndpointConfiguration
       #FailOnWarnings: Boolean
       #MinimumCompressionSize: Integer
       #Mode: String
-      Name: UserModuleApi
+      Name: UserApi
       #Parameters: 
       #  Key : Value
       #Policy: Json
       #Tags: 
       #  - Tag
 
+  UserApiResource:
+    Type: "AWS::ApiGateway::Resource"
+    DependsOn: UserApi
+    Properties:
+      RestApiId: !Ref UserApi
+      ParentId: !GetAtt
+        - UserApi
+        - RootResourceId
+      PathPart: users  
 
-  UserModuleApiGetAllMethod:
+  UserSingleApiResource:
+    Type: "AWS::ApiGateway::Resource"
+    DependsOn: UserApi
+    Properties:
+      RestApiId: !Ref UserApi
+      ParentId: !Ref UserApiResource
+      PathPart: "{id}"
+
+  # UserApiGetAllMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserApiResource
+  #   Properties: 
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       Type: "AWS_PROXY"
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     #RequestParameters: 
+  #     #  Key : Value
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
+  UserApiAnyMethod:
     Type: AWS::ApiGateway::Method
+    DependsOn: 
+      - UserApiResource
     Properties: 
-      ApiKeyRequired: Boolean
-      AuthorizationScopes: 
-        - String
+      #ApiKeyRequired: false
+      #AuthorizationScopes: 
+      #  - String
+      # Description: "User API Get All Method"
       AuthorizationType: "NONE"
       # AuthorizerId: String
-      HttpMethod: "GET"
+      HttpMethod: "ANY"
+      #Integration: 
+      #  Type: "MOCK"
       Integration: 
         IntegrationHttpMethod: "POST"
+        IntegrationResponses: 
+          - StatusCode: 200
+            ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
         Type: "AWS_PROXY"
+        RequestParameters: 
+          integration.request.path.id: method.request.path.id
         Uri: !Sub
           - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
-          - lambdaArn: !GetAtt UserModule.Arn
-      #MethodResponses: 
-      #  - MethodResponse
-      #OperationName: String
-      #RequestModels: 
-      #  Key : Value
-      #RequestParameters: 
-      #  Key : Value
-      #RequestValidatorId: String
-      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
-      RestApiId: !Ref "UserModuleApi"    
-
-  UserModuleApiGetOneMethod:
-    Type: AWS::ApiGateway::Method
-    Properties: 
-      ApiKeyRequired: Boolean
-      AuthorizationScopes: 
-        - String
-      AuthorizationType: "NONE"
-      # AuthorizerId: String
-      HttpMethod: "GET"
-      Integration: 
-        IntegrationHttpMethod: "POST"
-        Type: "AWS_PROXY"
-        Uri: !Sub
-          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
-          - lambdaArn: !GetAtt UserModule.Arn
-      #MethodResponses: 
-      #  - MethodResponse
+          - lambdaArn: !GetAtt UserFunction.Arn
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        - StatusCode: 500  
       #OperationName: String
       #RequestModels: 
       #  Key : Value
       RequestParameters: 
-        method.request.path.id : true
+        method.request.path.id: true
       #RequestValidatorId: String
-      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
-      RestApiId: !Ref "UserModuleApi"    
+      #ResourceId: !GetAtt "UserApi.RootResourceId"
+      ResourceId: !Ref "UserApiResource"
+      RestApiId: !Ref "UserApi"    
 
-  UserModuleApiPostMethod:
+  # UserApiGetMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserApiResource
+  #   Properties: 
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: 
+  #             method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+  #             method.response.header.Access-Control-Allow-Methods: "'GET,POST,PATCH,DELETE,PUT,OPTIONS'"
+  #             method.response.header.Access-Control-Allow-Origin: "'*'"
+
+  #       Type: "AWS_PROXY"
+  #       RequestParameters: 
+  #         integration.request.path.id: method.request.path.id
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: 
+  #           method.response.header.Access-Control-Allow-Origin: false
+  #           method.response.header.Access-Control-Allow-Headers: false
+  #           method.response.header.Access-Control-Allow-Methods: false
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     RequestParameters: 
+  #       method.request.path.id: true
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
+  UserApiOptionsMethod:
     Type: AWS::ApiGateway::Method
+    DependsOn: 
+      - UserApiResource
     Properties: 
-      ApiKeyRequired: Boolean
-      AuthorizationScopes: 
-        - String
+      # Description: "User API Get All Method"
+      AuthorizationType: "NONE"
+      HttpMethod: "OPTIONS"
+      Integration: 
+        #IntegrationHttpMethod: "POST"
+        PassthroughBehavior: WHEN_NO_MATCH 
+        IntegrationResponses: 
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PATCH,DELETE,PUT,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''  
+        Type: "MOCK"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: 
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+      ResourceId: !Ref "UserApiResource"
+      RestApiId: !Ref "UserApi"
+
+  # UserSingleApiGetMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserSingleApiResource
+  #   Properties:  
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       Type: "AWS_PROXY"
+  #       RequestParameters: 
+  #         integration.request.path.id: method.request.path.id
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     RequestParameters: 
+  #       method.request.path.id: true
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserSingleApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
+  UserSingleApiAnyMethod:
+    Type: AWS::ApiGateway::Method
+    DependsOn: 
+      - UserSingleApiResource
+    Properties:  
+      #ApiKeyRequired: false
+      #AuthorizationScopes: 
+      #  - String
+      # Description: "User API Get All Method"
       AuthorizationType: "NONE"
       # AuthorizerId: String
-      HttpMethod: "POST"
+      HttpMethod: "ANY"
+      #Integration: 
+      #  Type: "MOCK"
       Integration: 
         IntegrationHttpMethod: "POST"
+        IntegrationResponses: 
+          - StatusCode: 200
+            ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
         Type: "AWS_PROXY"
+        RequestParameters: 
+          integration.request.path.id: method.request.path.id
         Uri: !Sub
           - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
-          - lambdaArn: !GetAtt UserModule.Arn
-      #MethodResponses: 
-      #  - MethodResponse
+          - lambdaArn: !GetAtt UserFunction.Arn
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        - StatusCode: 500  
       #OperationName: String
       #RequestModels: 
       #  Key : Value
-      #RequestParameters: 
-      #  Key : Value
+      RequestParameters: 
+        method.request.path.id: true
       #RequestValidatorId: String
-      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
-      RestApiId: !Ref "UserModuleApi"    
+      #ResourceId: !GetAtt "UserApi.RootResourceId"
+      ResourceId: !Ref "UserSingleApiResource"
+      RestApiId: !Ref "UserApi"    
 
-  UserModuleApiPatchMethod:
-    Type: AWS::ApiGateway::Method
-    Properties: 
-      ApiKeyRequired: Boolean
-      AuthorizationScopes: 
-        - String
-      AuthorizationType: "NONE"
-      # AuthorizerId: String
-      HttpMethod: "PATCH"
-      Integration: 
-        IntegrationHttpMethod: "PATCH"
-        Type: "AWS_PROXY"
-        Uri: !Sub
-          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
-          - lambdaArn: !GetAtt UserModule.Arn
-      #MethodResponses: 
-      #  - MethodResponse
-      #OperationName: String
-      #RequestModels: 
-      #  Key : Value
-      #RequestParameters: 
-      #  Key : Value
-      #RequestValidatorId: String
-      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
-      RestApiId: !Ref "UserModuleApi"    
-
-  UserModuleApiDeleteMethod:
-    Type: AWS::ApiGateway::Method
-    Properties: 
-      ApiKeyRequired: Boolean
-      AuthorizationScopes: 
-        - String
-      AuthorizationType: "NONE"
-      # AuthorizerId: String
-      HttpMethod: "DELETE"
-      Integration: 
-        IntegrationHttpMethod: "DELETE"
-        Type: "AWS_PROXY"
-        Uri: !Sub
-          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
-          - lambdaArn: !GetAtt UserModule.Arn
-      #MethodResponses: 
-      #  - MethodResponse
-      #OperationName: String
-      #RequestModels: 
-      #  Key : Value
-      #RequestParameters: 
-      #  Key : Value
-      #RequestValidatorId: String
-      ResourceId: !GetAtt "UserModuleApi.RootResourceId"
-      RestApiId: !Ref "UserModuleApi"    
-
-  UserModuleApiGatewayDeployment:
+  ApiGatewayCloudWatchLogsRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal: 
+              Service: 
+              - "apigateway.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Policies: 
+        - 
+          PolicyName: "ApiGatewayLogsPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              Effect: "Allow"
+              Action: 
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:DescribeLogGroups"
+                - "logs:DescribeLogStreams"
+                - "logs:PutLogEvents"
+                - "logs:GetLogEvents"
+                - "logs:FilterLogEvents"
+                # - "lambda:*"
+              Resource: "*"
+  
+  UserLambdaInvokePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Principal: "apigateway.amazonaws.com"
+      Action: "lambda:invokeFunction"
+      FunctionName: !GetAtt UserFunction.Arn
+    DependsOn: 
+      - UserApiGatewayDeployment
+        
+  UserApiStage:
+    DependsOn: 
+      - ApiGatewayAccount
+    Type: "AWS::ApiGateway::Stage"
+    Properties:
+      Description: "User API Stage" 
+      DeploymentId: !Ref UserApiGatewayDeployment
+      MethodSettings: 
+        - 
+          DataTraceEnabled: true
+          HttpMethod: "*"
+          LoggingLevel: "INFO"
+          ResourcePath: "/*"
+        # - 
+        #   DataTraceEnabled: true
+        #   HttpMethod: "GET"
+        #   LoggingLevel: "INFO"
+        #   ResourcePath: "/users/{id}"
+        # - 
+        #   DataTraceEnabled: true
+        #   HttpMethod: "PUT"
+        #   LoggingLevel: "INFO"
+        #   ResourcePath: "/users/{id}"
+        # - 
+        #   DataTraceEnabled: true
+        #   HttpMethod: "DELETE"
+        #   LoggingLevel: "INFO"
+        #   ResourcePath: "/users/{id}"
+    
+      RestApiId: !Ref UserApi
+      StageName: latest
+  
+  
+  UserApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: 
-      - UserModuleApiGetAllMethod
-      - UserModuleApiGetOneMethod
-      - UserModuleApiPostMethod
-      - UserModuleApiPatchMethod
-      - UserModuleApiDeleteMethod
+      - UserApiOptionsMethod
+      #- UserApiGetMethod
+      - UserApiAnyMethod
+      - UserSingleApiAnyMethod
+    Properties:
+      Description: "User API Deployment" 
+      RestApiId: !Ref UserApi   
+      
+      #StageName: beta
+      #StageDescription: 
+      #  LoggingLevel: INFO
+      # MetricsEnabled: true 
+      #  MethodSettings:
+      #    - ResourcePath: "/*"
+      #      LoggingLevel: INFO
+
+  UserFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: "User CRUD APIs"
+      FunctionName: UserFunction 
+      Handler: "index.handler"
+      #KmsKeyArn: 
+      MemorySize: 128
+      Role: !GetAtt "UserFunctionRole.Arn"
+      #Role: !GetAtt role.Arn
+      
+      Runtime: nodejs16.x
+      Timeout: 30  
+      VpcConfig:
+       SecurityGroupIds:
+         - sg-05e38a74dabe39ea7
+       SubnetIds:
+         - subnet-0bc6b49619dd14aa6
+      Environment:
+        Variables:
+          DSN: "mongodb://username:password@instancename.instanceid.ap-south-1.docdb.amazonaws.com:27017/?retryWrites=false" 
+          TLS: 1
+      Code:
+        S3Bucket: "kuldeepk-lambarepo"
+        S3Key: "user-lambda.zip"
+        # S3ObjectVersion: 
+        # ZipFile: 
+      #Tags:
+      #  - Key: keyname
+      #    Value: value
+
+  UserFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: "Allow" 
+              Action: 
+                - "sts:AssumeRole"
+              Principal: 
+                Service: 
+                  - "lambda.amazonaws.com"
+      #ManagedPolicyArns:
+      #  - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: "UserFunctionPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                # Action: ["cloudwatch.*", "logs:*"]
+                Action: 
+                  - 'logs:CreateLogStream'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:PutLogEvents'
+                  - 'ec2:DescribeInstances'
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:AttachNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+
+                Resource: "*"
+
+  DatabaseDocumentDBCluster:
+    Type: AWS::DocDB::DBCluster
     Properties: 
-      RestApiId: !Ref UserModuleApi   
-      StageName: beta
+      AvailabilityZones: 
+        - ap-south-1b
+      DBClusterIdentifier: my-docdb-cluster
+      EngineVersion: "4.0"
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPwd
+      Port: 27017
+      VpcSecurityGroupIds: 
+        - sg-05e38a74dabe39ea7
+
+  DatabaseDocumentDBInstance:
+    Type: AWS::DocDB::DBInstance
+    Properties: 
+      #AutoMinorVersionUpgrade: Boolean
+      AvailabilityZone: ap-south-1b
+      DBClusterIdentifier: !Ref DatabaseDocumentDBCluster
+      DBInstanceClass: db.t3.medium
+      DBInstanceIdentifier: my-docdb-instance
+      #EnablePerformanceInsights: Boolean
+      #PreferredMaintenanceWindow: String
+  # UserFrontendS3Hosting:
+  #   Type: AWS::S3::Bucket
+  #   Properties: 
+  #     AccessControl: PublicRead
+  #     BucketName: kuldeepk-frontend
+  #     WebsiteConfiguration: 
+  #       IndexDocument: index.html
+  #       ErrorDocument: index.html
+
+  # UserFrontendS3HostingPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: !Ref UserFrontendS3Hosting
+  #     PolicyDocument: 
+  #       Id: UserFrontendS3HostingPolicy
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Sid: PublicReadForFrontendS3Hosting
+  #           Effect: Allow
+  #           Principal: "*"
+  #           Action: 's3:GetObject'
+  #           Resource: !Join ['', ['arn:aws:s3:::', !Ref UserFrontendS3Hosting, '/*']]
+
+

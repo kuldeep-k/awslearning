@@ -2,7 +2,7 @@ const userModel = require('../models/users');
 const mongoose = require('mongoose');
 
 const getUsers = async () => {
-    return await userModel.find();
+  return await userModel.find();
 }
 
 const addUser = async (body) => {

@@ -394,15 +394,16 @@ Resources:
       #Role: !GetAtt role.Arn
       
       Runtime: nodejs16.x
-      #Timeout:  
-      #VpcConfig:
-      #  SecurityGroupIds:
-      #    - sg-id
-      #  SubnetIds:
-      #    - subnet-id
-      #Environment:
-      #  Variables:
-      #    key1: value1 # A map of key-value pairs that the Lambda function can access
+      Timeout: 30000  
+      VpcConfig:
+       SecurityGroupIds:
+         - sg-05e38a74dabe39ea7
+       SubnetIds:
+         - subnet-0bc6b49619dd14aa6
+      Environment:
+        Variables:
+          - DSN: "mongodb://username:password@instancename.instanceid.ap-south-1.docdb.amazonaws.com:27017/?retryWrites=false" 
+            TLS: 1
       Code:
         S3Bucket: "kuldeepk-lambarepo"
         S3Key: "user-lambda.zip"

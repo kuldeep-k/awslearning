@@ -1,6 +1,6 @@
 exports.handler = async (event) => {
     // TODO implement
-    const userService = require('./services/users');
+    
     let results = {};
     console.log(event)
 
@@ -23,6 +23,20 @@ exports.handler = async (event) => {
     }
 
     try {
+        let dbConnection = require("./connection");
+        console.log(dbConnection);
+        dbConnection.then((result) => {
+            if(!result) {
+                console.log("Facing issue in DB connection");
+                throw new Error("DB connection failed "+ error);
+            }
+        }).catch((error) => {
+            console.log("DB Not connected");
+            throw new Error("DB connection failed "+ error);
+        })
+    
+        const userService = require('./services/users');
+
         switch(event.httpMethod) {
             case "GET":
                 if(event.pathParameters && event.pathParameters.id) {
