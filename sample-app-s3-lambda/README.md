@@ -1,26 +1,24 @@
 Proposed variants
 =========================================
+
+###Variant 1
 - Frontend : NA
-  Backend: API-Gateway/Lambda
-  DB: NA
+- Backend: API-Gateway/Lambda
+- DB: N
 
-- Frontend : S3
-  Backend: API-Gateway/Lambda
-  DB: NA
+###Variant 2
+- Frontend : NA
+- Backend: API-Gateway/Lambda
+- DB: Document DB
 
-- Frontend : S3
-  Backend: API-Gateway/Lambda
-  DB: MySQL RDS
+###Variant 3
+- Frontend : NA
+- Backend: API-Gateway/Lambda
+- DB: Document DB
+- VPC / SUBNET / SG
 
-- Frontend : S3
-  Backend: API-Gateway/Lambda
-  DB: Dynamo DB
-
-- Frontend : S3
-  Backend: API-Gateway/Lambda
-  DB: Document DB
-
+###Variant 4
 - Frontend : S3 <- ECS
-  Backend: API-Gateway/Lambda <- ECS
-  DB: Dynamo DB <- ECS
+- Backend: API-Gateway/Lambda <- ECS
+- DB: Dynamo DB <- ECS
 

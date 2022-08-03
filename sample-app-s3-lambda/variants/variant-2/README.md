@@ -1,9 +1,9 @@
 
 #Variant 2
 
-- Frontend : React, S3
+- Frontend : NONE
 - Backend: API-Gateway/Lambda
-- DB: NA
+- DB: Document DB
 
 1) Lambda Specifc code is write into handle labmda/index.js along withh service file labmda/services/users.js . This code the uploaded to S3 bucket to become accessible for CloudFormation templates. Handler support Basic REST APIs for GET, POST as HTTP collection actions and GET, PATCH, DELETE as single object actions.
 APIs is seems to defined as
@@ -40,8 +40,15 @@ NOTE:   **UserApiAnyMethod API Method required lot of other parametes like Reque
 NOTE: **CORS header correctly need to set in OPTION API method and Lambda Response ( in code ). Otherwise APIs will not work with any frontend application while will give CORS errors.** 
 
 
-3) In Addition to above Variant 1 Items, variiant 2 also setup the Documenr DB ( MongoDB Compatible )
-	1) Lambda code chnages for Mongoose integration
-	2) Lambda setting changes for environment settings ( DSN, TLS )
-	3) Lambda setting changes for VPC. It needed to call AWS Document Db as both should be in same VPC/Subnet
-	4) Lambda setting chnages for add extra permission for Network interfaces
+3) In Addition to above Variant 1 Items, variant 2 also setup the Documenr DB ( MongoDB Compatible )
+
+	1. DatabaseDocumentDBCluster: Document DB Cluster with cluster configurations like VPC/Subnet/DB Engine/DB Port/DB Credentials, Credentilas used througb Clioud formation parameters.
+	2. DatabaseDocumentDBInstance: Document DB Instance with instance configurations like Instance type ( Used T3 medium for now )
+
+	Also 
+
+	1. Lambda code chnages for Mongoose integration
+	2. Lambda setting changes for environment settings ( DSN, TLS )
+	3. Lambda setting changes for VPC. It needed to call AWS Document Db as both should be in same VPC/Subnet, So added Subnet, Security Group and increased connection time
+	4. Lambda setting changes for add extra permission for Network interfaces
+	
