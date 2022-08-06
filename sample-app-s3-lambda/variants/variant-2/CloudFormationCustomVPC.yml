@@ -1,0 +1,650 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Stack create test stacking setup involves API Gatwway and Lambda "
+
+#Transform: S3Objects
+
+Parameters: 
+  DBUser: 
+    Description: "Document DB User"
+    Type: String
+    MinLength: 1
+    MaxLength: 41
+    AllowedPattern: ^[a-zA-Z0-9\!\*\$]*$
+  DBPwd: 
+    NoEcho: true
+    Description: "Document DB Password"
+    Type: String
+    MinLength: 1
+    MaxLength: 41
+    AllowedPattern: ^[a-zA-Z0-9\!\*\$]*$
+
+Resources:
+
+  MyCustomVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+
+  MyCustomVPCInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    #Properties:
+      
+  MyCustomVPCAttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyCustomVPC
+      InternetGatewayId: !Ref MyCustomVPCInternetGateway
+      
+  MyCustomVPCSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-south-1a
+      VpcId: !Ref MyCustomVPC
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+
+  MyCustomVPCSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-south-1b
+      VpcId: !Ref MyCustomVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+
+  MyCustomVPCRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyCustomVPC
+      
+  MyCustomVPCRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref MyCustomVPCRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyCustomVPCInternetGateway
+
+  MyCustomVPCRouteSubnetAssoc1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyCustomVPCSubnet1
+      RouteTableId: !Ref MyCustomVPCRouteTable
+
+  MyCustomVPCRouteSubnetAssoc2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyCustomVPCSubnet2
+      RouteTableId: !Ref MyCustomVPCRouteTable
+  
+  MyCustomVPCLambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: my-vpc-lambda-sg
+      GroupDescription: Custom Security Group for App  
+      VpcId: !Ref MyCustomVPC
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          CidrIp: 0.0.0.0/0
+          #SourceSecurityGroupId: !Ref MyCustomVPCSecurityGroup
+      #SecurityGroupEgress:
+      #  - Security Group Rule
+  
+  MyCustomVPCDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: my-vpc-db-sg
+      GroupDescription: Custom Security Group for DB
+      VpcId: !Ref MyCustomVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          #CidrIp
+          SourceSecurityGroupId: !Ref MyCustomVPCLambdaSecurityGroup
+      #SecurityGroupEgress:
+      #  - Security Group Rule
+      
+
+  ApiGatewayAccount:
+   Type: "AWS::ApiGateway::Account"
+   Properties:
+     CloudWatchRoleArn : !GetAtt
+       - "ApiGatewayCloudWatchLogsRole"
+       - "Arn"
+    
+  UserApi:
+    Type: AWS::ApiGateway::RestApi
+    DependsOn: 
+      - UserFunction  
+    Properties: 
+      # ApiKeySourceType: HEADER
+      #BinaryMediaTypes: 
+      #   - application~json
+      #Body: Json
+      #BodyS3Location: 
+      #  S3Location
+      #CloneFrom: String
+      Description: "User API"
+      #DisableExecuteApiEndpoint: Boolean
+      #EndpointConfiguration: 
+      #  EndpointConfiguration
+      #FailOnWarnings: Boolean
+      #MinimumCompressionSize: Integer
+      #Mode: String
+      Name: UserApi
+      #Parameters: 
+      #  Key : Value
+      #Policy: Json
+      #Tags: 
+      #  - Tag
+
+  UserApiResource:
+    Type: "AWS::ApiGateway::Resource"
+    DependsOn: UserApi
+    Properties:
+      RestApiId: !Ref UserApi
+      ParentId: !GetAtt
+        - UserApi
+        - RootResourceId
+      PathPart: users  
+
+  UserSingleApiResource:
+    Type: "AWS::ApiGateway::Resource"
+    DependsOn: UserApi
+    Properties:
+      RestApiId: !Ref UserApi
+      ParentId: !Ref UserApiResource
+      PathPart: "{id}"
+
+  # UserApiGetAllMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserApiResource
+  #   Properties: 
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       Type: "AWS_PROXY"
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     #RequestParameters: 
+  #     #  Key : Value
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
+  UserApiAnyMethod:
+    Type: AWS::ApiGateway::Method
+    DependsOn: 
+      - UserApiResource
+    Properties: 
+      #ApiKeyRequired: false
+      #AuthorizationScopes: 
+      #  - String
+      # Description: "User API Get All Method"
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "ANY"
+      #Integration: 
+      #  Type: "MOCK"
+      Integration: 
+        IntegrationHttpMethod: "POST"
+        IntegrationResponses: 
+          - StatusCode: 200
+            ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        Type: "AWS_PROXY"
+        RequestParameters: 
+          integration.request.path.id: method.request.path.id
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserFunction.Arn
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        - StatusCode: 500  
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      RequestParameters: 
+        method.request.path.id: true
+      #RequestValidatorId: String
+      #ResourceId: !GetAtt "UserApi.RootResourceId"
+      ResourceId: !Ref "UserApiResource"
+      RestApiId: !Ref "UserApi"    
+
+  # UserApiGetMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserApiResource
+  #   Properties: 
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: 
+  #             method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+  #             method.response.header.Access-Control-Allow-Methods: "'GET,POST,PATCH,DELETE,PUT,OPTIONS'"
+  #             method.response.header.Access-Control-Allow-Origin: "'*'"
+
+  #       Type: "AWS_PROXY"
+  #       RequestParameters: 
+  #         integration.request.path.id: method.request.path.id
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: 
+  #           method.response.header.Access-Control-Allow-Origin: false
+  #           method.response.header.Access-Control-Allow-Headers: false
+  #           method.response.header.Access-Control-Allow-Methods: false
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     RequestParameters: 
+  #       method.request.path.id: true
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
+  UserApiOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    DependsOn: 
+      - UserApiResource
+    Properties: 
+      # Description: "User API Get All Method"
+      AuthorizationType: "NONE"
+      HttpMethod: "OPTIONS"
+      Integration: 
+        #IntegrationHttpMethod: "POST"
+        PassthroughBehavior: WHEN_NO_MATCH 
+        IntegrationResponses: 
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PATCH,DELETE,PUT,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''  
+        Type: "MOCK"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: 
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+      ResourceId: !Ref "UserApiResource"
+      RestApiId: !Ref "UserApi"
+
+  # UserSingleApiGetMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   DependsOn: 
+  #     - UserSingleApiResource
+  #   Properties:  
+  #     #ApiKeyRequired: false
+  #     #AuthorizationScopes: 
+  #     #  - String
+  #     # Description: "User API Get All Method"
+  #     AuthorizationType: "NONE"
+  #     # AuthorizerId: String
+  #     HttpMethod: "GET"
+  #     #Integration: 
+  #     #  Type: "MOCK"
+  #     Integration: 
+  #       IntegrationHttpMethod: "POST"
+  #       IntegrationResponses: 
+  #         - StatusCode: 200
+  #           ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       Type: "AWS_PROXY"
+  #       RequestParameters: 
+  #         integration.request.path.id: method.request.path.id
+  #       Uri: !Sub
+  #         - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+  #         - lambdaArn: !GetAtt UserFunction.Arn
+  #     MethodResponses: 
+  #       - StatusCode: 200
+  #         ResponseModels: {"application/json": "Empty"}
+  #         ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+  #       - StatusCode: 500  
+  #     #OperationName: String
+  #     #RequestModels: 
+  #     #  Key : Value
+  #     RequestParameters: 
+  #       method.request.path.id: true
+  #     #RequestValidatorId: String
+  #     #ResourceId: !GetAtt "UserApi.RootResourceId"
+  #     ResourceId: !Ref "UserSingleApiResource"
+  #     RestApiId: !Ref "UserApi"    
+
+  UserSingleApiAnyMethod:
+    Type: AWS::ApiGateway::Method
+    DependsOn: 
+      - UserSingleApiResource
+    Properties:  
+      #ApiKeyRequired: false
+      #AuthorizationScopes: 
+      #  - String
+      # Description: "User API Get All Method"
+      AuthorizationType: "NONE"
+      # AuthorizerId: String
+      HttpMethod: "ANY"
+      #Integration: 
+      #  Type: "MOCK"
+      Integration: 
+        IntegrationHttpMethod: "POST"
+        IntegrationResponses: 
+          - StatusCode: 200
+            ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        Type: "AWS_PROXY"
+        RequestParameters: 
+          integration.request.path.id: method.request.path.id
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt UserFunction.Arn
+      MethodResponses: 
+        - StatusCode: 200
+          ResponseModels: {"application/json": "Empty"}
+          ResponseParameters: {"method.response.header.Access-Control-Allow-Origin": "'*'"}
+        - StatusCode: 500  
+      #OperationName: String
+      #RequestModels: 
+      #  Key : Value
+      RequestParameters: 
+        method.request.path.id: true
+      #RequestValidatorId: String
+      #ResourceId: !GetAtt "UserApi.RootResourceId"
+      ResourceId: !Ref "UserSingleApiResource"
+      RestApiId: !Ref "UserApi"    
+
+  ApiGatewayCloudWatchLogsRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal: 
+              Service: 
+              - "apigateway.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Policies: 
+        - 
+          PolicyName: "ApiGatewayLogsPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              Effect: "Allow"
+              Action: 
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:DescribeLogGroups"
+                - "logs:DescribeLogStreams"
+                - "logs:PutLogEvents"
+                - "logs:GetLogEvents"
+                - "logs:FilterLogEvents"
+                # - "lambda:*"
+              Resource: "*"
+  
+  UserLambdaInvokePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Principal: "apigateway.amazonaws.com"
+      Action: "lambda:invokeFunction"
+      FunctionName: !GetAtt UserFunction.Arn
+    DependsOn: 
+      - UserApiGatewayDeployment
+        
+  UserApiStage:
+    DependsOn: 
+      - ApiGatewayAccount
+    Type: "AWS::ApiGateway::Stage"
+    Properties:
+      Description: "User API Stage" 
+      DeploymentId: !Ref UserApiGatewayDeployment
+      MethodSettings: 
+        - 
+          DataTraceEnabled: true
+          HttpMethod: "*"
+          LoggingLevel: "INFO"
+          ResourcePath: "/*"
+        # - 
+        #   DataTraceEnabled: true
+        #   HttpMethod: "GET"
+        #   LoggingLevel: "INFO"
+        #   ResourcePath: "/users/{id}"
+        # - 
+        #   DataTraceEnabled: true
+        #   HttpMethod: "PUT"
+        #   LoggingLevel: "INFO"
+        #   ResourcePath: "/users/{id}"
+        # - 
+        #   DataTraceEnabled: true
+        #   HttpMethod: "DELETE"
+        #   LoggingLevel: "INFO"
+        #   ResourcePath: "/users/{id}"
+    
+      RestApiId: !Ref UserApi
+      StageName: latest
+  
+  
+  UserApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: 
+      - UserApiOptionsMethod
+      #- UserApiGetMethod
+      - UserApiAnyMethod
+      - UserSingleApiAnyMethod
+    Properties:
+      Description: "User API Deployment" 
+      RestApiId: !Ref UserApi   
+      
+      #StageName: beta
+      #StageDescription: 
+      #  LoggingLevel: INFO
+      # MetricsEnabled: true 
+      #  MethodSettings:
+      #    - ResourcePath: "/*"
+      #      LoggingLevel: INFO
+
+  UserFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: "User CRUD APIs"
+      FunctionName: UserFunction 
+      Handler: "index.handler"
+      #KmsKeyArn: 
+      MemorySize: 128
+      Role: !GetAtt "UserFunctionRole.Arn"
+      #Role: !GetAtt role.Arn
+      Runtime: nodejs16.x
+      Timeout: 30
+
+      VpcConfig:
+       SecurityGroupIds:
+         #- sg-05e38a74dabe39ea7
+         - !Ref MyCustomVPCLambdaSecurityGroup
+       SubnetIds:
+         #- subnet-0bc6b49619dd14aa6
+         - !Ref MyCustomVPCSubnet2
+      Environment:
+        Variables:
+          DSN: "mongodb://username:password@instancename.instanceid.ap-south-1.docdb.amazonaws.com:27017/?retryWrites=false" 
+          TLS: 1
+      Code:
+        S3Bucket: "kuldeepk-lambarepo"
+        S3Key: "user-lambda.zip"
+        # S3ObjectVersion: 
+        # ZipFile: 
+      #Tags:
+      #  - Key: keyname
+      #    Value: value
+
+  UserFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: "Allow" 
+              Action: 
+                - "sts:AssumeRole"
+              Principal: 
+                Service: 
+                  - "lambda.amazonaws.com"
+      #ManagedPolicyArns:
+      #  - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: "UserFunctionPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                # Action: ["cloudwatch.*", "logs:*"]
+                Action: 
+                  - 'logs:CreateLogStream'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:PutLogEvents'
+                  - 'ec2:DescribeInstances'
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:AttachNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+
+                Resource: "*"
+
+  DatabaseDocumentDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    DependsOn: 
+      - MyCustomVPCSubnet1
+      - MyCustomVPCSubnet2
+    Properties: 
+      DBSubnetGroupDescription: Document Db Su
+      DBSubnetGroupName: doc_db_subnetgroup
+      SubnetIds: 
+        - !Ref MyCustomVPCSubnet1
+        - !Ref MyCustomVPCSubnet2  
+
+  DatabaseDocumentDBCluster:
+    Type: AWS::DocDB::DBCluster
+    DependsOn:   
+      - DatabaseDocumentDBSubnetGroup
+    Properties: 
+      AvailabilityZones:
+        - ap-south-1a 
+        - ap-south-1b
+      DBClusterIdentifier: my-docdb-cluster
+      EngineVersion: "4.0"
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPwd
+      Port: 27017
+      DBSubnetGroupName: !Ref DatabaseDocumentDBSubnetGroup
+      VpcSecurityGroupIds: 
+        #- sg-05e38a74dabe39ea7
+        - !Ref MyCustomVPCDBSecurityGroup
+
+  DatabaseDocumentDBInstance:
+    Type: AWS::DocDB::DBInstance
+    Properties: 
+      #AutoMinorVersionUpgrade: Boolean
+      AvailabilityZone: ap-south-1b
+      DBClusterIdentifier: !Ref DatabaseDocumentDBCluster
+      DBInstanceClass: db.t3.medium
+      DBInstanceIdentifier: my-docdb-instance
+      #EnablePerformanceInsights: Boolean
+      #PreferredMaintenanceWindow: String
+  # UserFrontendS3Hosting:
+  #   Type: AWS::S3::Bucket
+  #   Properties: 
+  #     AccessControl: PublicRead
+  #     BucketName: kuldeepk-frontend
+  #     WebsiteConfiguration: 
+  #       IndexDocument: index.html
+  #       ErrorDocument: index.html
+
+  # UserFrontendS3HostingPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: !Ref UserFrontendS3Hosting
+  #     PolicyDocument: 
+  #       Id: UserFrontendS3HostingPolicy
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Sid: PublicReadForFrontendS3Hosting
+  #           Effect: Allow
+  #           Principal: "*"
+  #           Action: 's3:GetObject'
+  #           Resource: !Join ['', ['arn:aws:s3:::', !Ref UserFrontendS3Hosting, '/*']]
+
+
+Outputs: 
+  VPC: 
+    Description: VPC ID
+    Export: 
+      Name: !Sub ${AWS::StackName}-VPC
+    Value: !Ref MyCustomVPC  
+
+  Subnet1: 
+    Description: Subnet 1
+    Export: 
+      Name: !Sub ${AWS::StackName}-SUBNET-1
+    Value: !Ref MyCustomVPCSubnet1     
+ 
+  Subnet2: 
+    Description: Subnet 2
+    Export: 
+      Name: !Sub ${AWS::StackName}-SUBNET-2
+    Value: !Ref MyCustomVPCSubnet2   
+
+  AppSecurityGroup: 
+    Description: Lambda Security Group
+    Export: 
+      Name: !Sub ${AWS::StackName}-SG-LAMBDA
+    Value: !Ref MyCustomVPCLambdaSecurityGroup       
+
+  DBSecurityGroup: 
+    Description: DB Security Group
+    Export: 
+      Name: !Sub ${AWS::StackName}-SG-DB
+    Value: !Ref MyCustomVPCDBSecurityGroup       

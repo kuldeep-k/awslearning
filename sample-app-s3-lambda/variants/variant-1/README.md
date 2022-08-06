@@ -1,5 +1,5 @@
 
-#Variant 1
+## Variant 1
 
 - Frontend : React, S3
 - Backend: API-Gateway/Lambda
