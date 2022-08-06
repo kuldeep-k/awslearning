@@ -8,11 +8,19 @@
 1) Lambda Specifc code is write into handle labmda/index.js along withh service file labmda/services/users.js . Code used Document DB as DB end. This code the uploaded to S3 bucket to become accessible for CloudFormation templates. Handler support Basic REST APIs for GET, POST as HTTP collection actions and GET, PATCH, DELETE as single object actions.
 APIs is seems to defined as
 
+```
+
 	GET /            -> User List
+
 	GET /:id         -> User Details
+
 	POST /           -> Add User
+
 	PATCH /:id       -> Edit User
+
 	DELETE /:id      -> Delete User
+
+```
 
 2) CloudFormation Script creating following resources .
 
