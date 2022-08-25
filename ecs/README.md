@@ -55,8 +55,8 @@ $ docker push 782326730434.dkr.ecr.ap-south-1.amazonaws.com/trainingrepo:fronten
     1.  Network Mode
             None option mean container will be in accessible from other container. Good for run  isolated functionality.
             Host option mean container will given host machine ( EC2 ) network ( VPC, Subnet, SG, IP)
-            Bridge option will work like normal docker architecture where port mapping and other can be done on container level.
-            awsvpc option allow to attach dedeicated VPC and related functionality to container. 
+            Bridge option will work like normal docker architecture where port mapping can be done on container level. But AWS security (security group & ENI) is still applied on host EC2 cluster. 
+            awsvpc option allow to attach dedicated VPC and security group functionality to container itself. So firewall security control on container level.  
 
     2. Task Memory -> Setup in form as it should less than Ec2 memory. ( Less than 1GB in case t2micro, ex. 800 MB).
     3. Task CPU ->  Setup in form as it should less than Ec2 CPU. ( Less than 1vCPU/1000 CPU units in case t2micro, ex. 800 CPU Unit).
@@ -73,13 +73,27 @@ $ docker push 782326730434.dkr.ecr.ap-south-1.amazonaws.com/trainingrepo:fronten
     3. Inter container communcation is not achieved through Task as their is no easy way to know that how they can communicate through private IPs instead of public EC2 IP . Private IPs only assigned after Task is run, So it can not be set through Environment variables, Example DB container DSN passed to App container as Env Variables. Did not explored the cloudformation way yet.  Service is recommended in this case.
     4. Any mistakes done in task defintion can results into fainure of task  creation  like Resource:Memory, Resourec:ENI errors. 
 
-  
-Keep remvoing older revisions, VPC, SG and Task Defintions, they cann results into task creation error. 
-Their is few options for setup multi container architecture
-Single task definition with multiple container. 
-Separate task defintion for each container
+6. Service.
 
+    #### Without inter-container commuincation
+    
+    1. Setup both task definition ( App and DB ) in bridge mode.
+    2. Create Service for DB, Select latest DB task definition version. Do not choose load balancer OR service discovery. Leave all other options as default.
+    3. Create Service for App, Select latest App task definition version. Do not choose load balancer OR service discovery. Leave all other options as default.  
+    
+    #### With inter-container communication
+    
+    1. Setup DB task definition in awsvpc mode. That is required.
+    2. Create Service for DB, Select latest DB task definition version. Do not choose load balancer.
+    3. Select service discovery. Enter options like namespace, service discovery name. Select A Record Type.
+    4. Verify in AWS Route 53 If A Record is created for service discovery. It should like NAMESPACE.SERVICE-DISCOVERY-NAME. example if namespace is `sampleapp-db-srv-dv` and service discovery name is `sampleapp.containerdb` then Entry in Route 53 would be like sampleapp-db-srv-dv.sampleapp.containerdb. This is available as domain. in our VPC, So can be used as DB DSN .
+    5. Setup App task definition in bridge mode, set SOURCE PORT as 300 and DEST PORT as 0,  update DSN as above route 53 entry like `mongodb://sampleapp-db-srv-dv.sampleapp.containerdb:27017/testdb` .
+    6. Create Service for App, Select latest App task definition version. Do not choose load balancer OR service discovery. Leave all other options as default.  
+    7. Enable following SG Rule
+        a. In Security group link to DB service : Enable DB access for container by provide 27017 port access for SG relate to cluster itself.
+        b. In Security group link to Cluster enable PORT access for newly generated PORT in service task ex. 49155 accessible to public 0.0.0.0/0
+        c. Optionally In Security group link to Cluster enable SSH 22 PORT access to accessible to your local system's public IP for SSH and debug  
 
-
+    #### With inter-container communication plus load balancer
 
 
