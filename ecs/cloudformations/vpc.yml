@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS ECS Saple Cluster Permissions
+
+Resources:
+
+  MyEcsSampleAppVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+
+  MyEcsSampleAppSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Sub '10.0.0.0/24'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref MyEcsSampleAppVpc
+
+  MyEcsSampleAppSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Sub '10.0.2.0/24'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref MyEcsSampleAppVpc  
+
+  MyEcsSampleAppInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    
+
+  MyEcsSampleAppAttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyEcsSampleAppVpc
+      InternetGatewayId: !Ref MyEcsSampleAppInternetGateway
+
+
+  MyEcsSampleAppRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyEcsSampleAppVpc
+
+  MyEcsSampleAppRouteTableAssoc1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyEcsSampleAppSubnet1
+      RouteTableId: !Ref MyEcsSampleAppRouteTable
+
+  MyEcsSampleAppRouteTableAssoc2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyEcsSampleAppSubnet2
+      RouteTableId: !Ref MyEcsSampleAppRouteTable
+
+
+  MyEcsSampleAppRoute:
+    Type: AWS::EC2::Route
+    DependsOn: MyEcsSampleAppAttachGateway
+    Properties:
+      RouteTableId: !Ref MyEcsSampleAppRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyEcsSampleAppInternetGateway
+
+Outputs:
+  VPC: 
+    Description: VPC
+    Value: !Ref MyEcsSampleAppVpc
+    Export: 
+      Name: 'VPC'
+
+  Subnet1: 
+    Description: Subnet1
+    Value: !Ref MyEcsSampleAppSubnet1
+    Export: 
+      Name: 'Subnet1'
+
+  Subnet2: 
+    Description: Subnet2
+    Value: !Ref MyEcsSampleAppSubnet2
+    Export: 
+      Name: 'Subnet2'

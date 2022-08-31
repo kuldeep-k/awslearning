@@ -1,0 +1,208 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS ECS Sample Cluster Containers
+
+Resources:
+  MyEcsSampleAppApplicationTD:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: sampleapp-app-container
+          Image: 782326730434.dkr.ecr.ap-south-1.amazonaws.com/trainingrepo:backend
+          PortMappings:
+            - ContainerPort: 3000
+              #HostPort: 0
+              Protocol: tcp
+          # LogConfiguration:
+          #   LogDriver: awslogs
+          #   Options:
+          #     awslogs-group: apis
+          #     awslogs-region: !Ref AWS::Region
+          #     awslog-stream-prefix: mysampleapp 
+      Cpu: 256
+      Family: sampleapp-app-td
+      Memory: 512
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !ImportValue MyEcsSampleAppECSExecutionRole
+      RequiresCompatibilities:
+        - FARGATE
+      
+  MyEcsSampleAppApplicationService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - MyEcsSampleAppApplicationLBListenerRule
+    Properties:
+      Cluster: !ImportValue MyEcsSampleAppCluster
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: "FARGATE"
+      LoadBalancers:
+        - ContainerName: sampleapp-app-container
+          ContainerPort: 3000
+          TargetGroupArn: !Ref MyEcsSampleAppApplicationLBTG 
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !ImportValue Subnet1
+            - !ImportValue Subnet2
+          SecurityGroups:
+            - !ImportValue MyEcsSampleAppContainerSG
+      ServiceName: "SampleApp-Application-Service"
+      TaskDefinition: !Ref MyEcsSampleAppApplicationTD
+
+  MyEcsSampleAppApplicationLBTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      # HealthCheckEnabled: false
+      # HealthCheckIntervalSeconds: Number
+      # HealthCheckPath: "String"
+      # HealthCheckPort: "String"
+      # HealthCheckProtocol: "String"
+      # HealthCheckTimeoutSeconds: Number
+      # HealthyThresholdCount: Number
+      # IpAddressType: "String"
+      # Matcher:
+      #   GrpcCode: "String"
+      #   HttpCode: "String"
+      Name: "String"
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !ImportValue VPC
+
+  MyEcsSampleAppApplicationLBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions: # Required
+        - TargetGroupArn: !Ref MyEcsSampleAppApplicationLBTG 
+          Type: forward
+      Conditions: # Required
+        - Field: path-pattern
+          Values: 
+            - /
+      ListenerArn: !ImportValue MyEcsSampleAppLBListener
+      Priority: 2 # Required
+
+  MyEcsSampleAppDatabaseTD:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: sampleapp-db-container
+          Image: 782326730434.dkr.ecr.ap-south-1.amazonaws.com/trainingrepo:db
+          PortMappings:
+            - ContainerPort: 27017
+              Protocol: tcp
+          Environment:
+            - Name: DSN
+              Value: "mongodb://sampleapp-db-srv-dv.sampleapp.containerdb:27017/testdb"
+            - Name: TLS
+              Value: 0
+          # LogConfiguration:
+          #   LogDriver: awslogs
+          #   Options:
+          #     awslogs-group: apis
+          #     awslogs-region: !Ref AWS::Region
+          #     awslog-stream-prefix: mysampleapp 
+      Cpu: 256
+      Family: sampleapp-db-td
+      Memory: 512
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !ImportValue MyEcsSampleAppECSExecutionRole
+      RequiresCompatibilities:
+        - FARGATE
+      
+  MyEcsSampleAppDBService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !ImportValue MyEcsSampleAppCluster
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: "FARGATE"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !ImportValue Subnet1
+            - !ImportValue Subnet2
+          SecurityGroups:
+            - !ImportValue MyEcsSampleAppContainerDBSG
+      ServiceName: "SampleApp-DB-Service"
+      TaskDefinition: !Ref MyEcsSampleAppDatabaseTD
+      ServiceRegistries:
+        - RegistryArn: !GetAtt MyEcsSampleAppDBServiceDiscovery.Arn
+          # Port: 27017
+
+# LogicalID:
+#   Type: AWS::ECS::Service
+#   Properties:
+#     CapacityProviderStrategy:
+#       CapacityProviderStrategy
+#     Cluster: "String"
+#     DeploymentConfiguration:
+#       MaximumPercent: Number
+#       MinimumHealthyPercent: Number
+#     DeploymentController:
+#       Type: "Number"
+#     DesiredCount: Number
+#     EnableECSManagedTags: false
+#     EnableExecuteCommand: false
+#     HealthCheckGracePeriodSeconds: Number
+#     LaunchType: "String"
+#     LoadBalancers:
+#       LoadBalancers
+#     NetworkConfiguration:
+#     PlacementConstraints:
+#       PlacementConstraints
+#     PlacementStrategies:
+#       PlacementStrategies
+#     PlatformVersion: "String"
+#     PropagateTags: "String"
+#     Role: "String"
+#     SchedulingStrategy: "String"
+#     ServiceName: "String"
+#     ServiceRegistries:
+#       ServiceRegistries
+#     Tags:
+#       Tags
+#     TaskDefinition: "String"
+
+  MyEcsSampleAppDBServiceNS:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Vpc: !ImportValue VPC
+      Name: sampleapp.containerdb
+
+  MyEcsSampleAppDBServiceDiscovery:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      # Description: "String"
+      DnsConfig:
+        DnsRecords:
+          - Type: A
+            TTL: 60
+          - Type: AAAA
+            TTL: 60  
+        #NamespaceId: "String"
+        RoutingPolicy: "WEIGHTED"
+      # HealthCheckConfig:
+      #   FailureThreshold: String
+      #   ResourcePath: "String"
+      #   Type: "String"
+      # HealthCheckCustomConfig:
+      #   FailureThreshold: String
+      Name: "sampleapp-db-srv-dv"
+      NamespaceId: !Ref MyEcsSampleAppDBServiceNS
+      # Tags:
+      #   Tags
+      # Type: "String"
+
+Outputs:
+  ApiEndPoint:
+    Description: API End Point
+    Value: !Join ['', [ 'http://', !ImportValue MyEcsSampleAppLBDomainName, '/users']]
+    Export:
+      Name: 'APIEndPoint' 

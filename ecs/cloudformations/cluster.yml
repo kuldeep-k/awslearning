@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS ECS Sample Cluster
+
+Resources:
+  MyEcsSampleAppCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      CapacityProviders:
+        - FARGATE
+      ClusterName: "my-sample-app-cluster"
+
+  MyEcsSampleAppLBSeurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      # GroupName: 
+      GroupDescription: My ECS Sample App LB SG Allow request from outside 
+      VpcId: !ImportValue VPC
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: -1
+
+  MyEcsSampleAppLBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: "sampleapp-lb-tg"
+      Port: 80
+      Protocol: HTTP
+      VpcId: !ImportValue VPC
+
+  MyEcsSampleAppLBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: # Required
+        - Type: forward
+          TargetGroupArn: !Ref MyEcsSampleAppLBTargetGroup
+      LoadBalancerArn: !Ref MyEcsSampleAppLB
+      Port: 80
+      Protocol: HTTP
+      
+  MyEcsSampleAppLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: "my-sampleapp-lb"
+      SecurityGroups:
+        - !Ref MyEcsSampleAppLBSeurityGroup
+      Subnets:
+        - !ImportValue Subnet1
+        - !ImportValue Subnet2
+
+  MyEcsSampleAppLBLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: "my-sampleapp-lb-loggroup"
+      RetentionInDays: 1
+
+  MyEcsSampleAppContainerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "ecs containers security group" # Required
+      SecurityGroupIngress:
+        - SourceSecurityGroupId: !Ref MyEcsSampleAppLBSeurityGroup
+          IpProtocol: -1  
+      VpcId: !ImportValue VPC
+
+  MyEcsSampleAppContainerDBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "ecs containers db security group" # Required
+      SecurityGroupIngress:
+        - SourceSecurityGroupId: !Ref MyEcsSampleAppContainerSG
+          IpProtocol: -1  
+      VpcId: !ImportValue VPC        
+      
+
+Outputs:
+  Cluster:
+    Value:  !Ref MyEcsSampleAppCluster
+    Export: 
+      Name: MyEcsSampleAppCluster
+
+  Listener:      
+    Value: !Ref MyEcsSampleAppLBListener
+    Export:
+      Name: MyEcsSampleAppLBListener
+
+  ContainerSecurityGroup:
+    Value: !Ref MyEcsSampleAppContainerSG
+    Export:
+      Name: MyEcsSampleAppContainerSG
+
+  ContainerDBSecurityGroup:
+    Value: !Ref MyEcsSampleAppContainerDBSG
+    Export:
+      Name: MyEcsSampleAppContainerDBSG
+
+  LoadBalancerDomain:
+    Value: !GetAtt MyEcsSampleAppLB.DNSName
+    Export:
+      Name: MyEcsSampleAppLBDomainName
