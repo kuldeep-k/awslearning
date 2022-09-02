@@ -71,7 +71,6 @@ Resources:
           IpProtocol: -1  
       VpcId: !ImportValue VPC        
       
-
 Outputs:
   Cluster:
     Value:  !Ref MyEcsSampleAppCluster

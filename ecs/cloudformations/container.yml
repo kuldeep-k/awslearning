@@ -12,12 +12,17 @@ Resources:
             - ContainerPort: 3000
               #HostPort: 0
               Protocol: tcp
-          # LogConfiguration:
-          #   LogDriver: awslogs
-          #   Options:
-          #     awslogs-group: apis
-          #     awslogs-region: !Ref AWS::Region
-          #     awslog-stream-prefix: mysampleapp 
+          Environment:
+            - Name: DSN
+              Value: "mongodb://sampleapp-db-srv-dv.sampleapp.containerdb:27017/testdb"
+            - Name: TLS
+              Value: 0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: my-sampleapp-lb-loggroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: app 
       Cpu: 256
       Family: sampleapp-app-td
       Memory: 512
@@ -81,7 +86,7 @@ Resources:
       Conditions: # Required
         - Field: path-pattern
           Values: 
-            - /
+            - /users
       ListenerArn: !ImportValue MyEcsSampleAppLBListener
       Priority: 2 # Required
 
@@ -94,17 +99,12 @@ Resources:
           PortMappings:
             - ContainerPort: 27017
               Protocol: tcp
-          Environment:
-            - Name: DSN
-              Value: "mongodb://sampleapp-db-srv-dv.sampleapp.containerdb:27017/testdb"
-            - Name: TLS
-              Value: 0
-          # LogConfiguration:
-          #   LogDriver: awslogs
-          #   Options:
-          #     awslogs-group: apis
-          #     awslogs-region: !Ref AWS::Region
-          #     awslog-stream-prefix: mysampleapp 
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: my-sampleapp-lb-loggroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "db" 
       Cpu: 256
       Family: sampleapp-db-td
       Memory: 512

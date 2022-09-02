@@ -6,4 +6,4 @@ aws cloudformation create-stack --stack-name sample-app-ecs-vpc --template-body 
 
 aws cloudformation delete-stack --stack-name sample-app-ecs-vpc
 
-aws cloudformation create-stack --stack-name sample-app-ecs-vpc --capabilities CAPABILITY_IAM --template-body file://$PWD/iam.yml 
+aws cloudformation create-stack --stack-name sample-app-ecs-iam --capabilities CAPABILITY_IAM --template-body file://$PWD/iam.yml 

@@ -23,8 +23,10 @@ Resources:
                     - 'ecr:BatchCheckLayerAvailability'
                     - 'ecr:GetDownloadUrlForLayer'
                     - 'ecr:BatchGetImage'
-                    - 'logs:CreateLogStream'
-                    - 'logs:PutLogEvents'
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                    - "logs:DescribeLogStreams"
                   Resource: "*"
 
 Outputs:
