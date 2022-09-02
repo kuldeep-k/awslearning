@@ -85,7 +85,8 @@ Resources:
           Type: forward
       Conditions: # Required
         - Field: path-pattern
-          Values: 
+          Values:
+            - / 
             - /users
       ListenerArn: !ImportValue MyEcsSampleAppLBListener
       Priority: 2 # Required
