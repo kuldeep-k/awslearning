@@ -1,0 +1,39 @@
+#apiVersion: networking.k8s.io/v1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend-deploy-app
+spec:
+  selector:
+    matchLabels:
+      app: backend-deploy-app
+  replicas: 2    
+  template:
+  
+    metadata:
+      labels:
+        app: backend-deploy-app
+    spec:
+      containers:
+        - name: backend-deploy-container
+          image: kuldeepkm/sample-backend-app
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DSN
+              valueFrom:
+                configMapKeyRef:
+                  name: app-configmap
+                  key: DSN
+            - name: TLS
+              value: "0"
+
+
+
+        

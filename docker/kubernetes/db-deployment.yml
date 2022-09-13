@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deploy-main
+  labels:
+    app: db-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-deploy
+  template:
+    metadata:
+      labels:
+        app: db-deploy
+    spec:
+      containers:
+      - name: db-deploy
+        image: mongo:4.4.15
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+        ports:
+        - containerPort: 27017

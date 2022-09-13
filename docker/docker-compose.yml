@@ -1,0 +1,62 @@
+version: '3.3'
+
+services:
+  backend:
+    image: "kuldeepkm/sample-backend-app"
+    container_name: sample-backend-app
+    ports:
+      - "3300:3000"
+    environment:
+      PORT: 3000
+      DSN: "mongodb://sample-backend-db:27017/"
+      TLS: 0
+    depends_on: 
+      - db
+    networks:
+      - sample-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  db:
+    image: "mongo:4.4.15"
+    container_name: sample-backend-db
+    restart: always
+    ports:
+      - "27027:27017"
+    #volumes:
+    #  - ./data:/data/db  
+    networks:
+      - sample-network
+    #logging:
+    #  driver: "json-file"
+    #  options:
+    #    max-size: 10m
+    #    max-file: "3"
+
+  frontend:
+    image: "kuldeepkm/sample-frontend-app"
+    container_name: sample-frontend-app
+    # build:
+    #   context: frontend/
+    #   args:
+    #     REACT_APP_BACKEND_API: ${IP_ADDRESS}
+    ports:
+      - "9000:80"
+    environment:
+      REACT_APP_BACKEND_API: http://sample-backend-app:3300
+    depends_on: 
+      - backend  
+    networks:
+      - sample-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  sample-network:
+    driver: bridge
