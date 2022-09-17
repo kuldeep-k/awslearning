@@ -1,14 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-srv
+  name: backend-srv-internal
 spec:
-  type: LoadBalancer
-  # externalTrafficPolicy: Local
+  type: ClusterIP
   selector:
     app: backend-deploy-app
   ports:
     - protocol: TCP
       port: 3000
       targetPort: 3000
-      nodePort: 30010
+      

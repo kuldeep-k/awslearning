@@ -56,7 +56,6 @@ Following are steps to setup application on kubernetes using minikube. ( Cloud o
             
         ```
 
-
     #### configmap.yml
 
         This will used to set and expose DB HOST ( from DB Service ) to Backend Application

@@ -5,4 +5,6 @@ metadata:
   labels:
     app: app-configmap
 data:
-  DSN: mongodb://db-srv:27017/testdb
+  db-service: db-srv
+  # DSN: mongodb://admin:admin$123@db-srv:27017/testdb
+

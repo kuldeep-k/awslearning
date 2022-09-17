@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1beta1
+# apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  labels:
+    name: app-ingress
+spec:
+  rules:
+  - host: mysampleapp.local
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          serviceName: backend-srv-internal
+          servicePort: 3000
+          # service: 
+          #   name: backend-srv-internal
+          #   port: 
+          #     number: 3000

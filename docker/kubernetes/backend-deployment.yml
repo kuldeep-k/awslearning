@@ -26,11 +26,23 @@ spec:
           ports:
             - containerPort: 3000
           env:
-            - name: DSN
+            - name: SEC_DBUSER
+              valueFrom:
+                secretKeyRef: 
+                  name:  app-secrets
+                  key: SEC_DBUSER
+            - name: SEC_DBPASS
+              valueFrom:
+                secretKeyRef: 
+                  name:  app-secrets
+                  key: SEC_DBPASS
+            - name: DBURL
               valueFrom:
                 configMapKeyRef:
                   name: app-configmap
-                  key: DSN
+                  key: db-service
+            - name: DSN
+              value: mongodb://$(SEC_DBUSER):$(SEC_DBPASS)@$(DBURL)
             - name: TLS
               value: "0"
 
