@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-configmap
+  labels:
+    app: app-configmap
+data:
+  db-service: db-srv
+  # DSN: mongodb://admin:admin$123@db-srv:27017/testdb
+

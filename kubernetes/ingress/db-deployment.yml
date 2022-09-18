@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deploy-main
+  labels:
+    app: db-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-deploy
+  template:
+    metadata:
+      labels:
+        app: db-deploy
+    spec:
+      containers:
+      - name: db-deploy
+        image: mongo:4.4.15
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+        ports:
+        - containerPort: 27017
+        env:
+          - name: MONGO_INITDB_ROOT_USERNAME
+            # value: admin
+            valueFrom:
+              secretKeyRef: 
+                name:  app-secrets
+                key: SEC_DBUSER
+          - name: MONGO_INITDB_ROOT_PASSWORD
+            # value: admin12345
+            valueFrom:
+              secretKeyRef:
+                name:  app-secrets
+                key: SEC_DBPASS  
