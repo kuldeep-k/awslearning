@@ -89,7 +89,13 @@ Following are steps to setup application on kubernetes using minikube. ( Cloud o
         $ kubectl describe pod backend-deployment-aaaaaaa-bbbbb   # Get information about pod, "backend-deployment-aaaaaaa-bbbbb" is name from previous command
         # kubectl logs backend-deployment-aaaaaaa-bbbbb              # Get container logs for specified pod    
         ```
+        Deployment can be scaled up/down by using command
 
+        ```
+            kubectl scale --replicas=3 deployment/backend-deployment
+        ```
+
+        ** This command will increase / decrease pods to 3 replicas . Command also work for DB deployment above, but it is recommend to use StatefullSet instead of Deplyment for DB pods. So scale would be set there. **     
 
     #### backend-service.yml
 

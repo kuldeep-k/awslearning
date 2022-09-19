@@ -1,27 +1,34 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
-  name: db-sfset
+  name: db-deploy-main
   labels:
-    app: db-sfset
+    app: db-deploy
 spec:
-  serviceName: db-srv
   replicas: 1
   selector:
     matchLabels:
-      app: db-sfset
+      app: db-deploy
   template:
     metadata:
       labels:
-        app: db-sfset
+        app: db-deploy
     spec:
+      volumes:
+        - name: app-volume-link
+          persistentVolumeClaim:
+            claimName: app-pv-claim
+
       containers:
-      - name: db-sfset
+      - name: db-deploy
         image: mongo:4.4.15
         resources:
           limits:
             memory: "128Mi"
             cpu: "250m"
+        volumeMounts:
+          - name: app-volume-link
+            mountPath: /data/db
         ports:
         - containerPort: 27017
         env:
@@ -36,21 +43,4 @@ spec:
             valueFrom:
               secretKeyRef:
                 name:  app-secrets
-                key: SEC_DBPASS
-        volumeMounts:
-          - name: test-pvc
-            mountPath: /data/db
-  volumeClaimTemplates:
-    - metadata:
-        name: test-pvc
-      spec: 
-        storageClassName: manual
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-
-
-
-
+                key: SEC_DBPASS  
